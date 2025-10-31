@@ -1,3 +1,4 @@
+// Square.tsx
 import React, { useRef } from "react";
 
 export type ElementType =
@@ -12,28 +13,40 @@ export type ElementType =
 
 interface SquareProps {
   element: ElementType;
-  // ⭐ 新規追加: 回転角度 (度)
   rotation: number;
+  // ⭐ 新規追加: 信号が流れているか
+  isPowered: boolean;
   onClick: () => void;
   onLongPress: (screenX: number, screenY: number) => void;
   isLongPressing: boolean;
 }
 
-// 画像パスの定義 (変更なし)
-const ASSET_PATHS: Record<ElementType, string> = {
-  POWER: "assets/power.png",
-  WIRE_STRAIGHT: "assets/wire_straight.png",
-  WIRE_CURVE: "assets/wire_curve.png",
-  white: "",
-  NOT: "",
-  OR: "",
-  AND: "",
-  XOR: "",
+// 画像パスの定義。アクティブ状態のパスを追加
+const ASSET_PATHS: Record<ElementType, { normal: string; active: string }> = {
+  POWER: {
+    normal: "assets/power.png",
+    active: "assets/power.png",
+  }, // 電源はアクティブ固定
+  WIRE_STRAIGHT: {
+    normal: "assets/wire_straight.png",
+    active: "assets/wire_straight_active.png",
+  },
+  WIRE_CURVE: {
+    normal: "assets/wire_curve.png",
+    active: "assets/wire_curve_active.png",
+  },
+  // 画像を使わない素子はダミー
+  white: { normal: "", active: "" },
+  NOT: { normal: "", active: "" },
+  OR: { normal: "", active: "" },
+  AND: { normal: "", active: "" },
+  XOR: { normal: "", active: "" },
 };
 
 const Square: React.FC<SquareProps> = ({
   element,
   rotation,
+  isPowered,
   onClick,
   onLongPress,
   isLongPressing,
@@ -42,10 +55,22 @@ const Square: React.FC<SquareProps> = ({
   const timerRef = useRef<number | null>(null);
   const LONG_PRESS_THRESHOLD = 500;
 
-  const imagePath = ASSET_PATHS[element];
-  const useImage = !!imagePath;
+  // 1. 画像パスを決定
+  const assetData = ASSET_PATHS[element];
+  const useImage = !!assetData.normal;
 
-  // ... (背景色と表示テキストの決定ロジックは変更なし) ...
+  let imagePath = "";
+  if (useImage) {
+    // ワイヤ系 かつ 信号が流れている場合はアクティブ画像を使用
+    if (element.startsWith("WIRE") && isPowered) {
+      imagePath = assetData.active;
+    } else {
+      imagePath = assetData.normal;
+    }
+  }
+
+  // 2. 素子に応じたスタイルと表示テキストを決定 (変更なし)
+  // ... (bgColorとdisplayTextの決定ロジックは前回から維持) ...
   let bgColor = "#fff";
   let displayText = "";
 
@@ -73,7 +98,7 @@ const Square: React.FC<SquareProps> = ({
       case "POWER":
         bgColor = "#2ecc71";
         displayText = "PWR";
-        break; // 電源も画像がない場合は色を表示
+        break;
       case "white":
       default:
         bgColor = "#fff";
@@ -92,7 +117,7 @@ const Square: React.FC<SquareProps> = ({
     justifyContent: "center",
     alignItems: "center",
     boxShadow: isLongPressing ? "0 0 10px 5px #f1c40f inset" : "none",
-    transition: "box-shadow 0.1s, transform 0.2s ease-out", // transformにトランジションを追加
+    transition: "box-shadow 0.1s, transform 0.2s ease-out",
     fontWeight: "bold",
     fontSize: "12px",
     color: useImage
@@ -102,12 +127,12 @@ const Square: React.FC<SquareProps> = ({
       : "white",
     textShadow: element.includes("WIRE") ? "0 0 1px #333" : "none",
 
-    backgroundImage: useImage ? `url(${imagePath})` : "none",
+    // ⭐ 画像パスが動的に決定される
+    backgroundImage: imagePath ? `url(${imagePath})` : "none",
     backgroundSize: "contain",
     backgroundRepeat: "no-repeat",
     backgroundPosition: "center",
 
-    // ⭐ 回転を適用
     transform: `rotate(${rotation}deg)`,
   };
 
