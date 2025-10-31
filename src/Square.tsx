@@ -61,6 +61,7 @@ const Square: React.FC<SquareProps> = ({
 }) => {
   const squareRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<number | null>(null);
+  const isTouch = useRef(false);
   const LONG_PRESS_THRESHOLD = 500;
 
   // 1. 画像パスを決定
@@ -153,65 +154,65 @@ const Square: React.FC<SquareProps> = ({
     transform: `rotate(${rotation}deg)`,
   };
 
-  const isTouch = useRef(false);
-
+  // ヘルパー関数: タイマーをクリアし、参照をnullにする
   const clearTimer = () => {
     if (timerRef.current) {
-      clearTimeout(timerRef.current);
+      window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
   };
 
-  const handleStart = (_clientX: number, _clientY: number) => {
-    clearTimer();
+  const handleStart = (clientX: number, clientY: number) => {
+    clearTimer(); // 念のため既存のタイマーをクリア
 
     timerRef.current = window.setTimeout(() => {
-      if (squareRef.current) {
-        const rect = squareRef.current.getBoundingClientRect();
-        onLongPress(rect.left + rect.width / 2, rect.top + rect.height / 2);
-      }
+      // ⭐ 長押しが成立した場合の処理
+      onLongPress(clientX, clientY);
+      clearTimer(); // 長押し成立後、タイマーをクリア
+      // 長押しが成立した場合、次の onMouseUp は無視されるように isTouch をリセットしない
     }, LONG_PRESS_THRESHOLD);
   };
 
-  const handleEnd = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (timerRef.current) {
-      onClick();
-    }
-    clearTimer();
-
-    // ⭐ タッチ操作の場合、フラグを立ててマウスイベントを抑制する準備をする
-    if (e && e.nativeEvent.type.startsWith("touch")) {
-      isTouch.current = true;
-    }
-  };
-
-  // マウスイベント (PC)
-  const onMouseDown = (e: React.MouseEvent) =>
-    handleStart(e.clientX, e.clientY);
-
-  const onMouseUp = (e: React.MouseEvent) => {
-    // ⭐ タッチフラグが立っている場合、このマウスイベントを無視する
-    if (isTouch.current) {
+  // ⭐ handleEnd: タイミングとイベント抑制の修正
+  const handleEnd = (e: React.MouseEvent | React.TouchEvent | undefined) => {
+    // 1. タッチイベント後のエミュレートされたマウスイベントの抑制 (ダブルタップ対策)
+    // タッチ操作後に発火した onMouseUp (e.type === 'mouseup') の場合、処理を無視
+    if (e && e.type === "mouseup" && isTouch.current) {
       isTouch.current = false; // フラグをリセット
       e.preventDefault(); // クリックイベントの伝播を抑制
       return;
     }
-    handleEnd(e);
+
+    // 2. タイミングロジック: タイマーがまだ動いているか確認
+    if (timerRef.current) {
+      // タイマーが残っている = LONG_PRESS_THRESHOLD未満の短いタップ
+
+      // ⭐ 最重要: 長押しタイマーを即座に停止させる
+      clearTimer();
+
+      // ⭐ 回転（通常クリック）を実行する
+      onClick();
+
+      // タッチ操作だった場合、次の onMouseUp を抑制するためにフラグを立てる
+      if (e && e.nativeEvent.type.startsWith("touch")) {
+        isTouch.current = true;
+      }
+    }
+    // 長押しが成立した場合は timerRef.current は null なので、何もしない
   };
+
+  const onMouseDown = (e: React.MouseEvent) =>
+    handleStart(e.clientX, e.clientY);
+  const onMouseUp = (e: React.MouseEvent) => handleEnd(e);
   const onMouseLeave = () => clearTimer();
 
-  // タッチイベント (スマホ/iPad)
   const onTouchStart = (e: React.TouchEvent) => {
-    isTouch.current = true; // タッチ開始時にフラグを立てる
+    // onTouchStart では isTouch はまだ立てない（onMouseUpとの衝突防止のため）
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   };
 
-  const onTouchEnd = (e: React.TouchEvent) => {
-    handleEnd(e);
-    // タッチイベント終了後、ブラウザがクリックイベントを発火させるのを待つ
-    // 抑制は onMouseUp で行う
-  };
+  const onTouchEnd = (e: React.TouchEvent) => handleEnd(e);
 
   return (
     <div
