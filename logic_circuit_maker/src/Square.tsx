@@ -14,6 +14,8 @@ export type ElementType =
 interface SquareProps {
   element: ElementType;
   rotation: number;
+  //電源がONかどうか
+  isOn: boolean;
   // ⭐ 新規追加: 信号が流れているか
   isPowered: boolean;
   onClick: () => void;
@@ -22,10 +24,15 @@ interface SquareProps {
 }
 
 // 画像パスの定義。アクティブ状態のパスを追加
-const ASSET_PATHS: Record<ElementType, { normal: string; active: string }> = {
+const ASSET_PATHS: Record<
+  ElementType,
+  { normal: string; active: string; on?: string; off?: string }
+> = {
   POWER: {
     normal: "assets/power.png",
     active: "assets/power.png",
+    on: "assets/power_on.png", // オン状態の画像
+    off: "assets/power_off.png", // オフ状態の画像
   }, // 電源はアクティブ固定
   WIRE_STRAIGHT: {
     normal: "assets/wire_straight.png",
@@ -37,16 +44,17 @@ const ASSET_PATHS: Record<ElementType, { normal: string; active: string }> = {
   },
   // 画像を使わない素子はダミー
   white: { normal: "", active: "" },
-  NOT: { normal: "", active: "" },
-  OR: { normal: "", active: "" },
-  AND: { normal: "", active: "" },
-  XOR: { normal: "", active: "" },
+  NOT: { normal: "assets/not.png", active: "assets/not_active.png" },
+  OR: { normal: "assets/or.png", active: "assets/or_active.png" },
+  AND: { normal: "assets/and.png", active: "assets/and_active.png" },
+  XOR: { normal: "assets/xor.png", active: "assets/xor_active.png" },
 };
 
 const Square: React.FC<SquareProps> = ({
   element,
   rotation,
   isPowered,
+  isOn,
   onClick,
   onLongPress,
   isLongPressing,
@@ -61,8 +69,17 @@ const Square: React.FC<SquareProps> = ({
 
   let imagePath = "";
   if (useImage) {
-    // ワイヤ系 かつ 信号が流れている場合はアクティブ画像を使用
-    if (element.startsWith("WIRE") && isPowered) {
+    if (element === "POWER") {
+      // ⭐ POWERの場合、isOnの状態に応じて画像を選択
+      imagePath = isOn ? assetData.on! : assetData.off!;
+    } else if (
+      (element.startsWith("WIRE") ||
+        element === "OR" ||
+        element === "AND" ||
+        element === "NOT" ||
+        element === "XOR") &&
+      isPowered
+    ) {
       imagePath = assetData.active;
     } else {
       imagePath = assetData.normal;
