@@ -160,8 +160,9 @@ const Square: React.FC<SquareProps> = ({
     }
   };
 
-  const handleStart = (clientX: number, clientY: number) => {
+  const handleStart = (_clientX: number, _clientY: number) => {
     clearTimer();
+
     timerRef.current = window.setTimeout(() => {
       if (squareRef.current) {
         const rect = squareRef.current.getBoundingClientRect();
