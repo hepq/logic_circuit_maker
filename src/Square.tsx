@@ -153,6 +153,8 @@ const Square: React.FC<SquareProps> = ({
     transform: `rotate(${rotation}deg)`,
   };
 
+  const isTouch = useRef(false);
+
   const clearTimer = () => {
     if (timerRef.current) {
       clearTimeout(timerRef.current);
@@ -171,23 +173,45 @@ const Square: React.FC<SquareProps> = ({
     }, LONG_PRESS_THRESHOLD);
   };
 
-  const handleEnd = () => {
+  const handleEnd = (e?: React.MouseEvent | React.TouchEvent) => {
     if (timerRef.current) {
       onClick();
     }
     clearTimer();
+
+    // ⭐ タッチ操作の場合、フラグを立ててマウスイベントを抑制する準備をする
+    if (e && e.nativeEvent.type.startsWith("touch")) {
+      isTouch.current = true;
+    }
   };
 
+  // マウスイベント (PC)
   const onMouseDown = (e: React.MouseEvent) =>
     handleStart(e.clientX, e.clientY);
-  const onMouseUp = () => handleEnd();
+
+  const onMouseUp = (e: React.MouseEvent) => {
+    // ⭐ タッチフラグが立っている場合、このマウスイベントを無視する
+    if (isTouch.current) {
+      isTouch.current = false; // フラグをリセット
+      e.preventDefault(); // クリックイベントの伝播を抑制
+      return;
+    }
+    handleEnd(e);
+  };
   const onMouseLeave = () => clearTimer();
 
+  // タッチイベント (スマホ/iPad)
   const onTouchStart = (e: React.TouchEvent) => {
+    isTouch.current = true; // タッチ開始時にフラグを立てる
     const touch = e.touches[0];
     handleStart(touch.clientX, touch.clientY);
   };
-  const onTouchEnd = () => handleEnd();
+
+  const onTouchEnd = (e: React.TouchEvent) => {
+    handleEnd(e);
+    // タッチイベント終了後、ブラウザがクリックイベントを発火させるのを待つ
+    // 抑制は onMouseUp で行う
+  };
 
   return (
     <div

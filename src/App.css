@@ -40,3 +40,21 @@
 .read-the-docs {
   color: #888;
 }
+
+/* App.css または index.css */
+
+/* 盤面全体、またはアプリケーションのルート要素に対して適用 */
+.App,
+#root,
+.board-container {
+  /* 標準的なプロパティ */
+  user-select: none;
+
+  /* ベンダープレフィックス (特に Safari/iOS 向け) */
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+
+  /* タップ時のハイライトを無効化 (iOSでのうっとうしい薄青いハイライト) */
+  -webkit-tap-highlight-color: transparent;
+}
