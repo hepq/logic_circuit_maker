@@ -89,41 +89,9 @@ const Square: React.FC<SquareProps> = ({
   // 2. 素子に応じたスタイルと表示テキストを決定 (変更なし)
   // ... (bgColorとdisplayTextの決定ロジックは前回から維持) ...
   let bgColor = "#fff";
-  let displayText = "";
-
   if (useImage) {
     bgColor = "transparent";
-    displayText = "";
-  } else {
-    switch (element) {
-      case "NOT":
-        bgColor = "#3498db";
-        displayText = "NOT";
-        break;
-      case "OR":
-        bgColor = "#e67e22";
-        displayText = "OR";
-        break;
-      case "AND":
-        bgColor = "#f1c40f";
-        displayText = "AND";
-        break;
-      case "XOR":
-        bgColor = "#9b59b6";
-        displayText = "XOR";
-        break;
-      case "POWER":
-        bgColor = "#2ecc71";
-        displayText = "PWR";
-        break;
-      case "white":
-      default:
-        bgColor = "#fff";
-        displayText = "";
-        break;
-    }
   }
-
   const squareStyle: React.CSSProperties = {
     width: "50px",
     height: "50px",
