@@ -325,7 +325,7 @@ const Board: React.FC = () => {
       ) {
         setRotations((prevRotations) => {
           const newRotations = prevRotations.map((rowArr) => [...rowArr]);
-          newRotations[row][col] = (prevRotations[row][col] + 90) % 360;
+          newRotations[row][col] = prevRotations[row][col] + 90;
           return newRotations;
         });
       }
